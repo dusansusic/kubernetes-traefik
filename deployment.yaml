@@ -1,0 +1,218 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: traefik-ingress-controller
+  namespace: traefik
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: traefik-ingress-controller
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - services
+  - endpoints
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - extensions
+  resources:
+  - ingresses
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - extensions
+  resources:
+  - ingresses/status
+  verbs:
+  - update
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: traefik-ingress-controller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: traefik-ingress-controller
+subjects:
+- kind: ServiceAccount
+  name: traefik-ingress-controller
+  namespace: traefik infra-traefik
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: traefik-ingress-controller
+  namespace: traefik
+  labels:
+    k8s-app: traefik-ingress
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      k8s-app: traefik-ingress
+  template:
+    metadata:
+      labels:
+        k8s-app: traefik-ingress
+        name: traefik-ingress
+    spec:
+      serviceAccountName: traefik-ingress-controller
+      terminationGracePeriodSeconds: 35
+      volumes:
+        - name: traefik-ui-tls-cert
+          secret:
+            secretName: traefik-ui-tls-cert
+        - name: traefik-configmap
+          configMap:
+            name: traefik-configmap
+      containers:
+      - image: traefik:1.7.2
+        name: traefik-ingress
+        imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            cpu: 200m
+            memory: 384Mi
+          requests:
+            cpu: 25m
+            memory: 128Mi
+        livenessProbe:
+          failureThreshold: 2
+          httpGet:
+            path: /ping
+            port: 80
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        readinessProbe:
+          failureThreshold: 2
+          httpGet:
+            path: /ping
+            port: 80
+            scheme: HTTP
+          periodSeconds: 5
+        volumeMounts:
+          - mountPath: "/ssl"
+            name: "traefik-ui-tls-cert"
+          - mountPath: "/config"
+            name: "traefik-configmap"
+        ports:
+        - name: http
+          containerPort: 80
+        - name: https
+          containerPort: 443
+        - name: dashboard
+          containerPort: 8080
+        args:
+        - --logLevel=INFO
+        - --configfile=/config/traefik.toml
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: traefik-configmap
+  namespace: traefik
+data:
+  traefik.toml: |
+    defaultEntryPoints = ["http","https"]
+
+    [entryPoints]
+
+      [entryPoints.http]
+      address = ":80"
+
+
+      [entryPoints.https]
+      address = ":443"
+        [entryPoints.https.tls]
+          [[entryPoints.https.tls.certificates]]
+          CertFile = "/ssl/tls.crt"
+          KeyFile = "/ssl/tls.key"
+
+      [entryPoints.traefik]
+        address = ":8080"
+        [entryPoints.traefik.auth.basic]
+        users = ["admin:$apr1$zjjGWKW4$W2JIcu4m26WzOzzESDF0W/"]
+
+    [kubernetes]
+      [kubernetes.ingressEndpoint]
+        publishedService = "traefik/traefik"
+
+    [ping]
+    entryPoint = "http"
+
+    [api]
+    entryPoint = "traefik"
+#---
+#apiVersion: v1
+#kind: Secret
+#metadata:
+#  name: traefik-ui-tls-cert
+#  namespace: traefik
+#  labels:
+#    k8s-app: traefik-ingress
+#type: kubernetes.io/tls
+#data:
+#  tls.crt: #cat cert | base64 -w0
+#  tls.key: #cat key | base64 -w0
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: traefik
+  namespace: traefik
+  annotations: {}
+    # service.beta.kubernetes.io/aws-load-balancer-internal: 0.0.0.0/0
+spec:
+  selector:
+    k8s-app: traefik-ingress
+  ports:
+  - protocol: TCP
+    port: 80
+    name: http
+  - protocol: TCP
+    port: 443
+    name: https
+  type: LoadBalancer
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: traefik-dashboard
+  namespace: traefik
+spec:
+  selector:
+    k8s-app: traefik-ingress
+  ports:
+  - port: 8080
+    name: dashboard
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: traefik-dashboard-ingress
+  namespace: traefik
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/frontend-entry-points: http,https
+    traefik.ingress.kubernetes.io/redirect-entry-point: https
+    traefik.ingress.kubernetes.io/redirect-permanent: "true"
+spec:
+  rules:
+  - host: traefik-ui.example.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: traefik-dashboard
+          servicePort: 8080
