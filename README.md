@@ -18,6 +18,11 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./tls.key -out ./tls
 kubectl create secret tls traefik-ui-tls-cert --key ./tls.key --cert ./tls.crt
 ```
 
+- Modify `entryPoints.traefik.auth.basic` section of `deployment.yaml` with new admin username/password
+```
+htpasswd -nb admin new_password_you_choose
+```
+
 - Apply deployment file:
 ```
 kubectl apply -f deployment.yaml
