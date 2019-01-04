@@ -76,7 +76,7 @@ spec:
           configMap:
             name: traefik-configmap
       containers:
-      - image: traefik:1.7.4
+      - image: traefik:1.7.6
         name: traefik-ingress
         imagePullPolicy: IfNotPresent
         resources:
