@@ -46,7 +46,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: traefik-ingress-controller
-  namespace: traefik infra-traefik
+  namespace: traefik
 ---
 kind: Deployment
 apiVersion: apps/v1
@@ -76,7 +76,7 @@ spec:
           configMap:
             name: traefik-configmap
       containers:
-      - image: traefik:1.7.6
+      - image: traefik:1.7.9
         name: traefik-ingress
         imagePullPolicy: IfNotPresent
         resources:
@@ -130,7 +130,6 @@ data:
 
       [entryPoints.http]
       address = ":80"
-
 
       [entryPoints.https]
       address = ":443"
