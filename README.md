@@ -34,7 +34,7 @@ htpasswd -nb admin new_password_you_choose
 
 - Apply deployment file and service account file:
 ```
-kubectl apply -f .
+kubectl apply -f ./
 ```
 
 
