@@ -129,7 +129,7 @@ spec:
           servicePort: 8080
 ```
 
-We need 4 annotations and they are all self-explanatory. Of course, to get it fully working you have to create DNS record `traefik-ui.example.com` that will point your ELB.
+We need 4 annotations and they are all self-explanatory. Of course, to get it fully working you have to create DNS record `traefik.example.com` that will point your ELB.
 
 
 ## Minikube
