@@ -34,7 +34,7 @@ htpasswd -nb admin new_password_you_choose
 
 - Apply deployment file and service account file:
 ```
-kubectl apply -f .
+kubectl apply -f ./
 ```
 
 
@@ -95,7 +95,7 @@ data:
     entryPoint = "traefik"
 ```
 We have three default entry points, `http`,`https` and `traefik`. First and second are listening on ports `80` and `443` and they're self-explanatory. Third one is used for `Traefik UI Dashboard`. We want to have UI secured with Basic Auth + TLS certificates.
-It's very important to have `publishedService = "traefik/traefik"` set. value `traefik/traefik` has format `namespace/service name`. If you plan to change the name of the namespace and service, you have to change this values to values that matches to your environment.
+It's very important to have `publishedService = "traefik/traefik-ingress-controller-http-service"` set. value `traefik/traefik-ingress-controller-http-service` has format `namespace/service name`. If you plan to change the name of the namespace and service, you have to change this values to values that matches to your environment.
 
 ### Service
 First service we need here is `traefik-ingress-controller-http-service`. It will expose `http` and `https` entry points defined in `ConfigMap` to the `LoadBalancer`. If you check LoadBalancer Security Group (ingress), ports 80 and 443 are opened. K8S will automatically create a LoadBalancer and join a node(s) that is/are running Traefik pods. If you want to create internal ELB as I did, you have to define annotations.
@@ -129,7 +129,7 @@ spec:
           servicePort: 8080
 ```
 
-We need 4 annotations and they are all self-explanatory. Of course, to get it fully working you have to create DNS record `traefik-ui.example.com` that will point your ELB.
+We need 4 annotations and they are all self-explanatory. Of course, to get it fully working you have to create DNS record `traefik.example.com` that will point your ELB.
 
 
 ## Minikube
