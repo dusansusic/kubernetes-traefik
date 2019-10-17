@@ -148,5 +148,6 @@ traefik-ingress-controller-dashboard-service   ClusterIP   10.96.120.63         
 traefik-ingress-controller-http-service        NodePort    10.108.120.206       <none>         80:30530/TCP,443:32520/TCP   2m23s
 ```
 
+
 Go to your browser and open (in this case): `https://traefik.example.com:32520`, authenticate with `admin`/`admin`.
 ![Traefik UI](png/traefik_ui.png)
