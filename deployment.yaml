@@ -26,7 +26,7 @@ spec:
           configMap:
             name: traefik-ingress-configmap
       containers:
-      - image: traefik
+      - image: traefik:1.7
         name: traefik-ingress-controller
         imagePullPolicy: Always
         resources:
