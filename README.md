@@ -1,4 +1,6 @@
-# kubernetes-traefik
+# DEPRECATED
+
+## kubernetes-traefik
 Traefik has this feature in versions 1.7 and newer
 
 ## Prerequirements
